@@ -1,0 +1,47 @@
+---
+- name: Deploy web server
+  hosts: localhost
+  gather_facts: no
+  vars:
+    domain_name: "localhost"
+  tasks:
+    - name: Install required packages
+      command: "brew install apache2"
+      environment:
+        PATH: "{{ ansible_env.PATH }}:/usr/local/bin"
+      args:
+        creates: /usr/local/bin/httpd
+
+    - name: Create directory for website content
+      file:
+        path: /usr/local/var/www
+        state: directory
+
+    - name: Copy HTML file to serve
+      copy:
+        content: |
+          <html>
+          <head>
+          <title>Hello World</title>
+          </head>
+          <body>
+          <h1>Hello World!</h1>
+          </body>
+          </html>
+        dest: /usr/local/var/www/index.html
+
+    - name: Generate self-signed SSL certificate
+      command: "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /usr/local/etc/httpd/ssl/apache-selfsigned.key -out /usr/local/etc/httpd/ssl/apache-selfsigned.crt -config /path/to/openssl.cnf"
+      args:
+        creates: /usr/local/etc/httpd/ssl/apache-selfsigned.key
+
+    - name: Configure Apache virtual host
+      template:
+        src: templates/apache_virtual_host.conf.j2
+        dest: /usr/local/etc/httpd/extra/httpd-vhosts.conf
+      notify: Restart Apache
+
+  handlers:
+    - name: Restart Apache
+      command: "brew services restart apache2"
+
