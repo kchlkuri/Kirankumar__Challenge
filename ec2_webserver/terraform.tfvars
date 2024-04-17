@@ -1,0 +1,9 @@
+ami_id = "ami-051f8a213df8bc089"
+vpc_id = "vpc-022ea287266f40d1a"
+instance_profile = "ec2_global_role"
+keypair = "dpt11"
+instance_type = "t2.micro"
+asg_max_cap = "1"
+asg_min_cap = "1"
+asg_desired_cap = "1"
+alb_subnets=["subnet-0748614beb9907472","subnet-03ef1d6b3d99900ad"]

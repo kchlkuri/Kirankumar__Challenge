@@ -1,0 +1,48 @@
+---
+- name: Deploy web server
+  hosts: localhost
+  gather_facts: no
+  vars:
+    domain_name: "localhost"
+  tasks:
+    - name: This task to instal webserver
+      become: yes
+      yum:
+        name: httpd
+        state: latest
+    - name: copy index.html to target
+      become: yes
+      copy:
+        src: index.html
+        dest: /var/www/html
+    - name: Configure Apache virtual host
+      template:
+        src: ssl.j2
+        dest: /etc/httpd/conf.d/ssl.conf
+    - name: Create directory
+      file:
+        path: /etc/httpd/ssl
+        state: directory
+    - name: Generate private key
+      openssl_privatekey:
+        path: /etc/httpd/ssl/server.key
+        size: 2048
+    - name: Generate CSR
+      openssl_csr:
+        path: /etc/httpd/ssl/server.csr
+        privatekey_path: /etc/httpd/ssl/server.key
+        common_name: "abc.com"
+        country_name: "US"
+        state_or_province_name: "nj"
+        organization_name: "abc"
+        organizational_unit_name: "dev"
+    - name: Generate certificate
+      openssl_certificate:
+        path: /etc/httpd/ssl/server.crt
+        privatekey_path: /etc/httpd/ssl/server.key
+        csr_path: /etc/httpd/ssl/server.csr
+        provider: selfsigned
+    - name: start httpd service
+      service:
+        name: httpd
+        state: started
