@@ -1,0 +1,7 @@
+# Sample input for analysis, not a list of tool dependencies.
+# These versions are illustrative, not upgrade recommendations.
+requests==2.32.3
+flask
+fastapi>=0.100,<1
+pydantic==2.8.0
+pydantic==2.9.0
