@@ -1,8 +1,40 @@
 # ai-release-impact-agent
 
-A small offline Python CLI that reads `requirements.txt` and writes a dependency-risk
-report to `output/sample_report.md`. Despite the project name, it uses simple rules,
-not an AI model. It does not fetch or assess actual releases.
+A small, fully offline Python CLI that turns `requirements.txt` into an actionable
+Markdown dependency-risk report. It flags conflicting exact pins, unconstrained
+dependencies, and version ranges that need review.
+
+The implementation uses only the Python standard library. Despite the project
+name, it is rule-based: it does not use AI or fetch actual releases.
+
+## Architecture
+
+The tool runs as a single local process with three small modules. The CLI entry
+point lives in `report.py`; there is no separate service or orchestration layer.
+
+```text
+python3 -B report.py
+        |
+        v
+requirements.txt
+        |
+        v
+parser.py       Validate supported syntax and normalize package names
+        |       Return Requirement records with source line numbers
+        v
+analyzer.py     Group requirements and apply dependency-risk rules
+        |       Return findings ordered by priority, then package name
+        v
+report.py      Format findings and write the Markdown report
+        |
+        v
+output/sample_report.md
+```
+
+The parser rejects unsupported syntax rather than skipping entries. The analyzer
+does not modify the input, and the report generator writes only the selected
+output file. All processing stays local, with no network calls or third-party
+runtime dependencies.
 
 ## Run
 
@@ -26,6 +58,21 @@ python3 -B report.py /path/to/requirements.txt --output output/report.md
 The output directory is created when needed. An existing report is overwritten,
 but the input file cannot also be the output file. Invalid input returns exit
 code 1 with a line-numbered error; findings themselves do not cause a failing exit.
+
+## Sample report
+
+The included sample has five requirement entries and produces three findings.
+See the [formatted sample report](output/sample_report.md) for the full explanation
+and suggested actions.
+
+| Priority | Package | Finding |
+| --- | --- | --- |
+| High | `pydantic` | Two different exact pins |
+| Medium | `flask` | No version constraint |
+| Review | `fastapi` | Version range without a single exact pin |
+
+The checked-in sample report has a presentation-only formatting pass. Running
+the CLI regenerates the same findings in the generator's original, simpler layout.
 
 ## Checks
 
@@ -68,7 +115,13 @@ python3 -B -m unittest -v
 Exactly two test methods cover parsing and rejected syntax, then dependency-risk
 analysis and Markdown generation. Tests use temporary local files and no network.
 
-## Files
+## Resume bullets
+
+- Built a fully offline Python CLI that converts `requirements.txt` into prioritized Markdown dependency-risk reports using only the standard library.
+- Implemented requirement parsing with package-name normalization, line-numbered validation errors, and rule-based checks for conflicting exact pins, unpinned dependencies, and version ranges.
+- Separated parsing, analysis, and reporting into three focused modules and validated the workflow with two automated tests covering supported inputs, rejected syntax, risk classification, and Markdown output.
+
+## Project files
 
 ```text
 parser.py                  Read and validate the supported requirement syntax
@@ -76,7 +129,7 @@ analyzer.py                Find direct manifest risks
 report.py                  Generate Markdown and provide the CLI
 test_agent.py              Two basic tests
 requirements.txt           Sample input
-output/sample_report.md    Generated sample report
+output/sample_report.md    Generated findings with presentation-only formatting
 README.md                  Usage and limitations
 ```
 
