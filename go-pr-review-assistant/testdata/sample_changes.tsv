@@ -1,0 +1,10 @@
+# Fixture for internal/report tests: a fake base..HEAD diff.
+# Columns: status<TAB>path<TAB>added<TAB>deleted   ("-" means binary)
+M	internal/gitdiff/gitdiff.go	40	5
+A	internal/scopecheck/scopecheck.go	120	0
+M	cmd/review/main.go	30	12
+D	internal/legacy/old_helper.go	0	80
+M	docs/usage.md	15	3
+M	go.mod	2	1
+A	assets/logo.png	-	-
+D	internal/scopecheck/scopecheck_test.go	0	40

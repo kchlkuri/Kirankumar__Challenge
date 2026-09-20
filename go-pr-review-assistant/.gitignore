@@ -1,0 +1,7 @@
+# Compiled binary from `go build ./cmd/review`
+/review
+/bin/
+
+# Go test artifacts
+*.test
+*.out
