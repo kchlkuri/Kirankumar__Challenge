@@ -16,10 +16,10 @@ It uses local Git commands and the Python standard library.
 The report includes a summary, findings, historical context, and review recommendations.
 It is a review checklist, not an automated approval or measured test-coverage report.
 
-## Setup and run
+## Setup
 
-Use Python 3.10 or newer with Git installed. No packages, credentials, model downloads,
-MCP server, or hosted services are needed.
+Use Python 3.10 or newer and a local Git installation. There are no Python packages
+to install, credentials to configure, or services to start.
 
 From this repository's root:
 
@@ -29,38 +29,50 @@ python --version
 git --version
 ```
 
-Check out the branch you want to review in your target repository, then run:
+Use `python3` instead of `python` if needed on your machine. Run the commands below
+from the `github-pr-review-agent` directory.
+
+## Usage
+
+The target repository must already have the review branch checked out and a local
+base ref. The CLI compares committed changes only; it does not switch branches or
+fetch anything.
+
+Review the target's current branch against `main`:
 
 ```bash
 python -m src.main \
-  --repo /absolute/path/to/target-repo \
+  --repo "/absolute/path/to/target-repo" \
   --base main \
   --output /tmp/branch-review.md
 ```
 
-Use `python3` if that is your local Python command. The target needs a local `main`
-ref and at least one commit; `--base` can select another local ref. Nothing is fetched.
-The output path must not already exist, so the command cannot overwrite existing files.
-If you repeat the command, choose a new report filename.
+If the target uses `develop` as its base, select that local ref explicitly:
 
-The default output path is `sample_output/sample_review.md`, relative to your current
-directory. This repository includes that sample, so pass `--output` for your own review.
-Errors return exit code 1. Findings do not produce a failing exit code.
+```bash
+python -m src.main \
+  --repo "/absolute/path/to/target-repo" \
+  --base develop \
+  --output /tmp/develop-review.md
+```
+
+Replace the repository path with your checkout. A successful run prints
+`Wrote /tmp/branch-review.md` for the first example. The output file must not already
+exist; use a new filename for each run.
+
+`--base` defaults to `main`. Always pass `--output` for your own review because the
+default, `sample_output/sample_review.md`, is already included in the project.
+Errors return exit code 1; review warnings do not fail the command.
 
 ## Architecture
 
-`main.py` runs one local process:
+`main.py` runs the review in one process. `git_diff.py` reads changes from the common
+ancestor of the base and HEAD; `scope_check.py` applies path, size, and test-file
+rules; `history.py` reads earlier commits for touched paths. `report.py` turns those
+results into Markdown, while `utils.py` handles Git commands and Markdown escaping.
 
-1. `git_diff.py` resolves the base and HEAD, finds their common ancestor, and reads
-   file status and line counts for the ancestor-to-HEAD diff.
-2. `scope_check.py` applies path, size, and test-filename rules.
-3. `history.py` reads earlier commits for each touched path at the common ancestor.
-4. `report.py` formats the findings and recommendations as Markdown.
-5. `utils.py` runs Git without a shell and escapes Markdown content.
-
-The target repository is read-only. The CLI writes only the requested report, does
-not execute project tests or code, and never changes branches or creates commits.
-There is no database, UI, authentication layer, scheduler, or background worker.
+Git access is read-only, and the CLI writes only the requested report. It does not
+run target-project code or tests, change branches, call an API, or start background work.
 
 ## Rules and limitations
 
@@ -85,6 +97,8 @@ There is no database, UI, authentication layer, scheduler, or background worker.
   are listed without line counts. This is not a correctness or security review.
 
 ## Tests and sample report
+
+From the project directory:
 
 ```bash
 python -m unittest discover -s tests -v
@@ -122,9 +136,9 @@ github-pr-review-agent/
 
 ## Resume bullets
 
-- Built a local Python CLI that summarizes branch diffs and file history into structured Markdown review reports using Git and the standard library.
-- Implemented review heuristics for broad change scope and missing test-file updates, with explicit limits separating warnings from measured coverage.
-- Added focused heuristic tests and a temporary-repository integration test covering diff analysis, historical context, report generation, and non-overwriting output.
+- Built a standard-library Python CLI that combines Git branch diffs and per-file commit history into Markdown review reports.
+- Implemented deterministic checks for cross-directory changes, oversized diffs, dependency-manifest edits, and missing test-file updates.
+- Validated review rules and end-to-end report generation with two automated tests, including an isolated Git fixture and output-overwrite protection.
 
 ## References
 
